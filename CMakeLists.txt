@@ -15,23 +15,29 @@ endif()
 
 find_package(ament_cmake REQUIRED)
 find_package(ifc_msgs REQUIRED)
+find_package(ifc_tools REQUIRED)
 find_package(rclcpp REQUIRED)
 
-add_executable(${PROJECT_NAME} src/main.cpp)
+function(add_calibration_executable name source)
+    add_executable(${name} ${source})
 
-target_include_directories(${PROJECT_NAME} PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}/include
-)
+    target_include_directories(${name} PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/include
+    )
 
-target_link_libraries(${PROJECT_NAME} PRIVATE
-    ifc_msgs::ifc_msgs__rosidl_typesupport_cpp
-    rclcpp::rclcpp
-)
+    target_link_libraries(${name} PRIVATE
+        ifc_msgs::ifc_msgs__rosidl_typesupport_cpp
+        ifc_tools::ifc_tools
+        rclcpp::rclcpp
+    )
+endfunction()
+
+add_calibration_executable(${PROJECT_NAME} src/main.cpp)
 
 install(TARGETS ${PROJECT_NAME}
     DESTINATION lib/${PROJECT_NAME}
 )
 
-ament_export_dependencies(ifc_msgs rclcpp)
+ament_export_dependencies(ifc_msgs ifc_tools rclcpp)
 
 ament_package()
