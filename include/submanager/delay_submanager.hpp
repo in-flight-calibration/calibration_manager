@@ -10,6 +10,7 @@
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
+#include <mutex>
 #include <optional>
 #include <stdexcept>
 #include <string>
@@ -43,6 +44,8 @@ public:
 
     void update(const rclcpp::Time& now) override
     {
+        std::scoped_lock<std::mutex> lock(_mutex);
+
         if (!_filter.initialized())
         {
             return;
@@ -64,6 +67,8 @@ public:
 
     void fill(ifc_msgs::msg::CalibrationResults& results) const override
     {
+        std::scoped_lock<std::mutex> lock(_mutex);
+
         results.delay_status = _valid
             ? ifc_msgs::msg::CalibrationResults::DELAY_STATUS_VALID
             : ifc_msgs::msg::CalibrationResults::DELAY_STATUS_INVALID;
@@ -73,6 +78,8 @@ public:
 
     void debug() const override
     {
+        std::scoped_lock<std::mutex> lock(_mutex);
+
         if (!_filter.initialized())
         {
             RCLCPP_WARN(get_logger(), "delay: filter not initialized");
@@ -90,6 +97,7 @@ private:
     ifc_tools::KalmanFilter1D<double> _filter;
     rclcpp::Subscription<ifc_msgs::msg::Delay>::SharedPtr _subscription;
 
+    mutable std::mutex _mutex;
     bool _valid = false;
     std::optional<rclcpp::Time> _last_time;
     size_t _rejections = 0;
@@ -134,6 +142,8 @@ private:
         const double z = static_cast<double>(message.delay) / NS_PER_MS;
         const double sd = static_cast<double>(message.delay_sd) / NS_PER_MS;
         const double R = sd * sd;
+
+        std::scoped_lock<std::mutex> lock(_mutex);
 
         if (!_filter.initialized())
         {
